@@ -66,6 +66,8 @@ export function detectDeviceType(userAgent: string | null | undefined): string {
 
     const normalized = userAgent.toLowerCase();
     if (/ipad|tablet/i.test(normalized)) return "tablet";
+    // Chrome Android tablets omit Mobile, including in reduced user agents.
+    if (/android/i.test(normalized) && !/mobile/i.test(normalized)) return "tablet";
     if (/mobile|iphone|android(?!.*tablet)/i.test(normalized)) return "mobile";
     return "desktop";
 }
