@@ -16,7 +16,7 @@ const handlers: Record<string, (payload: JobPayload) => Promise<void>> = {
     console.log("[worker] recalc analytics", payload);
   },
   "webhook-dispatch": async (payload) => {
-    const { url, signature, payload: bodyPayload } = payload as { url: string; signature: string; payload: unknown };
+    const { url, signature, payload: bodyPayload } = payload as { url: string; signature: string; payload: any };
     
     // Perform SSRF validation on the destination URL before fetching
     await validateWebhookUrl(url);
