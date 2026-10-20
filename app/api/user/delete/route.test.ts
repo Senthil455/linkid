@@ -20,7 +20,8 @@ mock.module("@/lib/auth", {
 
 // The route deletes the account, then purges every workspace the user was a
 // member of (app/api/user/delete/route.ts:84-102), so the double needs
-// workspaceMember.findMany as well as the user operations.
+// workspaceMember.findMany as well as the user operations. A solo workspace is
+// used so the route deletes it instead of promoting another member.
 const prismaMock = {
   user: {
     findUnique: () => Promise.resolve(mockUser),
@@ -31,8 +32,23 @@ const prismaMock = {
   },
   workspaceMember: {
     findMany: () =>
-      Promise.resolve([{ workspace: { id: "workspace-1", username: "test-user" } }]),
+      Promise.resolve([
+        {
+          id: "membership-1",
+          role: "OWNER",
+          workspace: {
+            id: "workspace-1",
+            username: "test-user",
+            members: [],
+          },
+        },
+      ]),
+    update: () => Promise.resolve({}),
   },
+  workspace: {
+    deleteMany: () => Promise.resolve({ count: 1 }),
+  },
+  $transaction: (operations: Promise<unknown>[]) => Promise.all(operations),
 };
 
 mock.module("@/lib/prisma", {
