@@ -60,6 +60,23 @@ export async function releaseJob(id: string) {
   });
 }
 
+const JOB_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Delete finished jobs after their payload is no longer useful. Click jobs
+ * carry the visitor IP, user agent, referrer, and language; keeping them
+ * forever turns an operational queue into a permanent activity log.
+ */
+export async function pruneOldJobs(now: Date = new Date()) {
+  const cutoff = new Date(now.getTime() - JOB_RETENTION_MS);
+  return prisma.job.deleteMany({
+    where: {
+      status: { in: ["COMPLETED", "FAILED"] },
+      updatedAt: { lt: cutoff },
+    },
+  });
+}
+
 // Polling-based worker helper: finds the next eligible job and marks it processing.
 // Optionally filter by job type. If a non-matching job is found first, it is left
 // untouched so other workers can process it.
