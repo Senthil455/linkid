@@ -8,14 +8,14 @@ type DeleteManyArgs = {
     };
 };
 
-let captured: DeleteManyArgs | null = null;
+const deleteCalls: DeleteManyArgs[] = [];
 let deletedCount = 0;
 
 mock.module("@/lib/prisma", {
     defaultExport: {
         job: {
             deleteMany: async (args: DeleteManyArgs) => {
-                captured = args;
+                deleteCalls.push(args);
                 return { count: deletedCount };
             },
         },
@@ -24,7 +24,7 @@ mock.module("@/lib/prisma", {
         prisma: {
             job: {
                 deleteMany: async (args: DeleteManyArgs) => {
-                    captured = args;
+                    deleteCalls.push(args);
                     return { count: deletedCount };
                 },
             },
@@ -40,27 +40,30 @@ before(async () => {
 });
 
 test("deletes terminal jobs older than the retention window", async () => {
-    captured = null;
+    deleteCalls.length = 0;
     deletedCount = 12;
 
     const now = new Date("2026-10-20T12:00:00.000Z");
     const result = await pruneOldJobs(now);
 
     assert.deepEqual(result, { count: 12 });
-    assert.ok(captured);
-    assert.deepEqual(captured.where.status?.in, ["COMPLETED", "FAILED"]);
+    assert.equal(deleteCalls.length, 1);
+
+    const args = deleteCalls[0];
+    assert.ok(args);
+    assert.deepEqual(args.where.status?.in, ["COMPLETED", "FAILED"]);
     assert.equal(
-        captured.where.updatedAt?.lt.toISOString(),
+        args.where.updatedAt?.lt.toISOString(),
         new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
     );
 });
 
 test("reports zero when there is nothing to prune", async () => {
-    captured = null;
+    deleteCalls.length = 0;
     deletedCount = 0;
 
     const result = await pruneOldJobs(new Date("2026-10-20T12:00:00.000Z"));
 
     assert.deepEqual(result, { count: 0 });
-    assert.ok(captured);
+    assert.equal(deleteCalls.length, 1);
 });
