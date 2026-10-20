@@ -26,26 +26,29 @@ const input = {
 
 test("sends a signed POST with a timeout signal", async () => {
     validatedUrls.length = 0;
-    let captured: { input: RequestInfo | URL; init?: RequestInit } | null = null;
+    const requests: Array<{ input: RequestInfo | URL; init?: RequestInit }> = [];
 
     const fetchImpl: typeof fetch = async (requestInput, requestInit) => {
-        captured = { input: requestInput, init: requestInit };
+        requests.push({ input: requestInput, init: requestInit });
         return new Response(null, { status: 204 });
     };
 
     await deliverWebhook(input, { fetchImpl, timeoutMs: 5_000 });
 
     assert.deepEqual(validatedUrls, [input.url]);
-    assert.ok(captured);
-    assert.equal(captured.input, input.url);
-    assert.equal(captured.init?.method, "POST");
-    assert.equal(captured.init?.redirect, "error");
+    assert.equal(requests.length, 1);
+
+    const request = requests[0];
+    assert.ok(request);
+    assert.equal(request.input, input.url);
+    assert.equal(request.init?.method, "POST");
+    assert.equal(request.init?.redirect, "error");
     assert.equal(
-        (captured.init?.headers as Record<string, string>)["x-linkid-signature"],
+        (request.init?.headers as Record<string, string>)["x-linkid-signature"],
         input.signature
     );
-    assert.equal(captured.init?.body, JSON.stringify(input.body));
-    assert.ok(captured.init?.signal instanceof AbortSignal);
+    assert.equal(request.init?.body, JSON.stringify(input.body));
+    assert.ok(request.init?.signal instanceof AbortSignal);
 });
 
 test("surfaces a non-2xx response", async () => {
