@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { claimNextJob, markJobCompleted, markJobFailed, pruneOldJobs } from "@/lib/jobs";
+import { claimNextJob, markJobCompleted, markJobFailed } from "@/lib/jobs";
+import { pruneOldJobs } from "@/lib/jobRetention";
 import { processAnalyticsJob, type AnalyticsJobPayload } from "@/lib/analytics";
 import type { Prisma } from "@prisma/client";
 

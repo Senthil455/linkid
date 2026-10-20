@@ -35,7 +35,7 @@ mock.module("@/lib/prisma", {
 let pruneOldJobs: (now?: Date) => Promise<{ count: number }>;
 
 before(async () => {
-    const mod = await import("@/lib/jobs");
+    const mod = await import("@/lib/jobRetention");
     pruneOldJobs = mod.pruneOldJobs;
 });
 
